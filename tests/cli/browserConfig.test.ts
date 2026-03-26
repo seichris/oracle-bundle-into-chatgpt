@@ -175,14 +175,24 @@ describe("buildBrowserConfig", () => {
     ).rejects.toThrow(/attach-running/i);
   });
 
-  test("allows remote-chrome as an attach-running hint", async () => {
+  test("allows loopback remote-chrome as an attach-running hint", async () => {
     const config = await buildBrowserConfig({
       model: "gpt-5.2-pro",
       browserAttachRunning: true,
-      remoteChrome: "remote-host:9333",
+      remoteChrome: "127.0.0.1:9333",
     });
     expect(config.attachRunning).toBe(true);
-    expect(config.remoteChrome).toEqual({ host: "remote-host", port: 9_333 });
+    expect(config.remoteChrome).toEqual({ host: "127.0.0.1", port: 9_333 });
+  });
+
+  test("rejects non-loopback remote-chrome targets when attach-running is enabled", async () => {
+    await expect(
+      buildBrowserConfig({
+        model: "gpt-5.2-pro",
+        browserAttachRunning: true,
+        remoteChrome: "remote-host:9333",
+      }),
+    ).rejects.toThrow(/local loopback attach hints/i);
   });
 
   test("normalizes chatgpt-url alias and adds https when missing", async () => {

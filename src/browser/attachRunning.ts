@@ -1,6 +1,7 @@
 import type { BrowserLogger, ResolvedBrowserConfig } from "./types.js";
 import {
   discoverDevToolsActivePortCandidates,
+  isLoopbackDevToolsHost,
   type DevToolsActivePortCandidate,
 } from "./detect.js";
 
@@ -17,6 +18,11 @@ export async function resolveAttachRunningConnection(
 ): Promise<AttachRunningConnectionInfo> {
   const host = config.remoteChrome?.host ?? "127.0.0.1";
   const port = config.remoteChrome?.port ?? 9222;
+  if (!isLoopbackDevToolsHost(host)) {
+    throw new Error(
+      `--browser-attach-running only supports local loopback attach hints. Received ${host}:${port}; use 127.0.0.1, localhost, or [::1].`,
+    );
+  }
   if (config.chromePath) {
     logger("Note: --browser-chrome-path is ignored when --browser-attach-running is enabled.");
   }

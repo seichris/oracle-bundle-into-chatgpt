@@ -22,6 +22,11 @@ export interface DevToolsActivePortCandidate extends DevToolsActivePortInfo {
   mtimeMs: number;
 }
 
+export function isLoopbackDevToolsHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase().replace(/^\[(.*)\]$/u, "$1");
+  return normalized === "127.0.0.1" || normalized === "localhost" || normalized === "::1";
+}
+
 export async function detectChromeBinary(): Promise<{ path: string | null }> {
   const envPath = (process.env.CHROME_PATH ?? "").trim();
   if (envPath) {
@@ -106,6 +111,8 @@ export function resolveAttachRunningProfileRoots(
   if (platform === "linux") {
     return [
       { family: "chrome", root: path.join(homeDir, ".config", "google-chrome") },
+      { family: "chrome", root: path.join(homeDir, ".config", "google-chrome-beta") },
+      { family: "chrome", root: path.join(homeDir, ".config", "google-chrome-unstable") },
       { family: "chromium", root: path.join(homeDir, ".config", "chromium") },
       { family: "edge", root: path.join(homeDir, ".config", "microsoft-edge") },
       {

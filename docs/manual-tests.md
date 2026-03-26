@@ -205,7 +205,7 @@ Run this whenever you touch the local attach path (`--browser-attach-running`) o
      --model "GPT-5.2" \
      --prompt "Give me two short markdown bullets about browser tabs"
    ```
-   If the browser’s remote-debugging UI shows a different local port, rerun with `--remote-chrome <host:port>` in addition to `--browser-attach-running`.
+   If the browser’s remote-debugging UI shows a different local port, rerun with `--remote-chrome 127.0.0.1:<port>` (or `localhost:<port>`) in addition to `--browser-attach-running`.
 3. Verify Oracle opens a fresh tab in the existing browser, returns the answer, and closes only that Oracle-owned tab afterward.
 4. Reattach sanity check: repeat with a very short timeout if needed, then run `oracle session <id>` and confirm Oracle can reconnect to the saved tab/conversation.
 

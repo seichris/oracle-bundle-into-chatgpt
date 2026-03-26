@@ -464,7 +464,7 @@ program
   .addOption(
     new Option(
       "--browser-attach-running",
-      "Attach to a running local browser session instead of launching Chrome (defaults to 127.0.0.1:9222; combine with --remote-chrome to hint a different host:port).",
+      "Attach to a running local browser session instead of launching Chrome (defaults to 127.0.0.1:9222; combine with --remote-chrome 127.0.0.1:<port> to hint a different local loopback port).",
     ),
   )
   .addOption(
@@ -616,7 +616,7 @@ program
   .addOption(
     new Option(
       "--remote-chrome <host:port>",
-      "Connect to remote Chrome DevTools Protocol, or when combined with --browser-attach-running use this host:port as the local attach hint.",
+      "Connect to remote Chrome DevTools Protocol, or when combined with --browser-attach-running use a local loopback host:port as the attach hint.",
     ),
   )
   .addOption(

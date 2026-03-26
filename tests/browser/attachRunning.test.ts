@@ -104,4 +104,23 @@ describe("resolveAttachRunningConnection", () => {
       ),
     ).rejects.toThrow(/No running browser with attach metadata matched 127\.0\.0\.1:63332/i);
   });
+
+  test("rejects non-loopback attach-running hints", async () => {
+    vi.doMock("../../src/browser/detect.js", () => ({
+      discoverDevToolsActivePortCandidates: vi.fn(async () => []),
+      isLoopbackDevToolsHost: vi.fn(() => false),
+    }));
+
+    const { resolveAttachRunningConnection } = await import("../../src/browser/attachRunning.js");
+
+    await expect(
+      resolveAttachRunningConnection(
+        {
+          chromePath: null,
+          remoteChrome: { host: "192.168.1.10", port: 9222 },
+        },
+        vi.fn(),
+      ),
+    ).rejects.toThrow(/only supports local loopback attach hints/i);
+  });
 });

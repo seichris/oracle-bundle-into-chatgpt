@@ -10,6 +10,7 @@ import {
   normalizeChatgptUrl,
   parseDuration,
 } from "../browserMode.js";
+import { isLoopbackDevToolsHost } from "../browser/detect.js";
 import { normalizeBrowserModelStrategy } from "../browser/modelStrategy.js";
 import type { BrowserModelStrategy } from "../browser/types.js";
 import type { CookieParam } from "../browser/types.js";
@@ -138,6 +139,7 @@ export async function buildBrowserConfig(
   validateAttachRunningOptions(options, {
     attachRunning,
     hasInlineCookies: Boolean(inline?.cookies),
+    remoteChrome,
   });
   const rawUrl = options.chatgptUrl ?? options.browserUrl;
   const url = rawUrl ? normalizeChatgptUrl(rawUrl, CHATGPT_URL) : undefined;
@@ -221,9 +223,11 @@ function validateAttachRunningOptions(
   {
     attachRunning,
     hasInlineCookies,
+    remoteChrome,
   }: {
     attachRunning: boolean;
     hasInlineCookies: boolean;
+    remoteChrome?: { host: string; port: number };
   },
 ): void {
   if (!attachRunning) {
@@ -242,6 +246,12 @@ function validateAttachRunningOptions(
       ? "--browser-port/--browser-debug-port"
       : null,
   ].filter((value): value is string => Boolean(value));
+
+  if (remoteChrome && !isLoopbackDevToolsHost(remoteChrome.host)) {
+    throw new Error(
+      `--browser-attach-running only supports local loopback attach hints via --remote-chrome. Received ${remoteChrome.host}:${remoteChrome.port}; use 127.0.0.1, localhost, or [::1].`,
+    );
+  }
 
   if (conflicts.length > 0) {
     throw new Error(

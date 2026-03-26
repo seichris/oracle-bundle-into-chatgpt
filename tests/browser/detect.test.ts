@@ -56,6 +56,18 @@ describe("attach-running browser detection", () => {
     expect(roots[0]?.root).toContain("Google/Chrome");
   });
 
+  test("keeps Linux Chrome beta and unstable roots for cookie discovery", () => {
+    const roots = resolveAttachRunningProfileRoots("linux", "/home/peter");
+
+    expect(roots.map((entry) => entry.root)).toEqual(
+      expect.arrayContaining([
+        "/home/peter/.config/google-chrome",
+        "/home/peter/.config/google-chrome-beta",
+        "/home/peter/.config/google-chrome-unstable",
+      ]),
+    );
+  });
+
   test("discovers DevToolsActivePort files recursively and derives profile roots", async () => {
     const homeDir = await fs.mkdtemp(path.join(os.tmpdir(), "oracle-detect-"));
     tempDirs.push(homeDir);
