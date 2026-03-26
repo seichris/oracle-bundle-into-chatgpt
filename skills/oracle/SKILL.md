@@ -39,6 +39,13 @@ Recommended defaults:
 - Browser run (main path; long-running is normal):
   - `npx -y @steipete/oracle --engine browser --model gpt-5.4-pro -p "<task>" --file "src/**"`
 
+- Whole-repo browser upload (tracked archive; preferred when you want ChatGPT to inspect an entire repo):
+  - `cd /path/to/repo && git archive --format=zip --output /tmp/repo-tracked.zip HEAD`
+  - `npx -y @steipete/oracle --engine browser --browser-attachments always -p "<task>" --file /tmp/repo-tracked.zip`
+  - Notes:
+    - `git archive HEAD` includes tracked files only, so untracked junk like `node_modules`, `.next`, `dist`, and local logs stay out automatically.
+    - If you need extra excludes beyond tracked-file filtering, use git pathspecs or a repo-specific archive script; avoid brittle `grep` pipelines.
+
 - Manual paste fallback (assemble bundle, copy to clipboard):
   - `npx -y @steipete/oracle --render --copy -p "<task>" --file "src/**"`
   - Note: `--copy` is a hidden alias for `--copy-markdown`.

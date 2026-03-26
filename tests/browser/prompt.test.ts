@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { assembleBrowserPrompt } from "../../src/browser/prompt.js";
@@ -212,5 +214,39 @@ describe("assembleBrowserPrompt", () => {
       originalCount: 11,
       bundlePath: result.attachments[0]?.displayPath,
     });
+  });
+
+  test("treats zip archives as upload attachments", async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "oracle-zip-"));
+    const zipPath = path.join(tempDir, "repo-tracked.zip");
+    await fs.writeFile(zipPath, "fake zip payload");
+
+    try {
+      const result = await assembleBrowserPrompt(
+        buildOptions({
+          file: [zipPath],
+          browserAttachments: "always",
+        }),
+        {
+          cwd: "/repo",
+          readFilesImpl: async (paths) => {
+            expect(paths).toEqual([]);
+            return [];
+          },
+        },
+      );
+
+      expect(result.attachmentMode).toBe("upload");
+      expect(result.attachments).toEqual([
+        expect.objectContaining({
+          path: zipPath,
+          displayPath: path.relative("/repo", zipPath),
+        }),
+      ]);
+      expect(result.composerText).toBe("Explain the bug");
+      expect(result.inlineFileCount).toBe(0);
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
   });
 });
