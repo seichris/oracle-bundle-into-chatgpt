@@ -39,6 +39,10 @@ const MEDIA_EXTENSIONS = new Set([
   ".heic",
   ".heif",
   ".pdf",
+  ".zip",
+  ".tar",
+  ".gz",
+  ".7z",
 ]);
 
 export function isMediaFile(filePath: string): boolean {
@@ -53,6 +57,8 @@ export interface BrowserPromptArtifacts {
   attachments: BrowserAttachment[];
   inlineFileCount: number;
   tokenEstimateIncludesInlineFiles: boolean;
+  excludedAttachmentCount?: number;
+  excludedAttachmentBytes?: number;
   attachmentsPolicy: "auto" | "never" | "always";
   attachmentMode: "inline" | "upload" | "bundle";
   fallback?: {
@@ -134,6 +140,11 @@ export async function assembleBrowserPrompt(
     .trim();
 
   const attachments: BrowserAttachment[] = [...selectedPlan.attachments, ...mediaAttachments];
+  const excludedAttachmentCount = mediaAttachments.length;
+  const excludedAttachmentBytes = mediaAttachments.reduce(
+    (sum, attachment) => sum + (attachment.sizeBytes ?? 0),
+    0,
+  );
 
   const shouldBundle = selectedPlan.shouldBundle;
   let bundleText: string | null = null;
@@ -236,6 +247,8 @@ export async function assembleBrowserPrompt(
     attachments,
     inlineFileCount,
     tokenEstimateIncludesInlineFiles,
+    excludedAttachmentCount,
+    excludedAttachmentBytes,
     attachmentsPolicy,
     attachmentMode: selectedPlan.mode,
     fallback,

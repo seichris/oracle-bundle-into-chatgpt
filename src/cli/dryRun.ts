@@ -14,7 +14,11 @@ import { isKnownModel } from "../oracle/modelResolver.js";
 import { assembleBrowserPrompt, type BrowserPromptArtifacts } from "../browser/prompt.js";
 import type { BrowserAttachment } from "../browser/types.js";
 import type { BrowserSessionConfig } from "../sessionStore.js";
-import { buildTokenEstimateSuffix, formatAttachmentLabel } from "../browser/promptSummary.js";
+import {
+  buildOpaqueAttachmentWarning,
+  buildTokenEstimateSuffix,
+  formatAttachmentLabel,
+} from "../browser/promptSummary.js";
 import { buildCookiePlan } from "../browser/policies.js";
 
 interface DryRunDeps {
@@ -113,6 +117,10 @@ async function runBrowserDryRun(
   const suffix = buildTokenEstimateSuffix(artifacts);
   const headerLine = `[dry-run] Oracle (${version}) would launch browser mode (${runOptions.model}) with ~${artifacts.estimatedInputTokens.toLocaleString()} tokens${suffix}.`;
   log(chalk.cyan(headerLine));
+  const opaqueAttachmentWarning = buildOpaqueAttachmentWarning(artifacts);
+  if (opaqueAttachmentWarning) {
+    log(chalk.dim(`[dry-run] ${opaqueAttachmentWarning}`));
+  }
   logBrowserCookieStrategy(browserConfig, log, "dry-run");
   logBrowserFileSummary(artifacts, log, "dry-run");
 }
@@ -180,6 +188,10 @@ export async function runBrowserPreview(
   const suffix = buildTokenEstimateSuffix(artifacts);
   const headerLine = `[preview] Oracle (${version}) browser mode (${runOptions.model}) with ~${artifacts.estimatedInputTokens.toLocaleString()} tokens${suffix}.`;
   log(chalk.cyan(headerLine));
+  const opaqueAttachmentWarning = buildOpaqueAttachmentWarning(artifacts);
+  if (opaqueAttachmentWarning) {
+    log(chalk.dim(`[preview] ${opaqueAttachmentWarning}`));
+  }
   logBrowserFileSummary(artifacts, log, "preview");
   if (previewMode === "json" || previewMode === "full") {
     const attachmentSummary = artifacts.attachments.map((attachment) => ({

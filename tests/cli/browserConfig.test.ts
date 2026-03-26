@@ -15,7 +15,7 @@ describe("buildBrowserConfig", () => {
       headless: undefined,
       keepBrowser: undefined,
       hideWindow: undefined,
-      desiredModel: "GPT-5.4 Pro",
+      desiredModel: "Extended Pro",
       debug: undefined,
       allowCookieErrors: true,
     });
@@ -76,7 +76,7 @@ describe("buildBrowserConfig", () => {
       model: "gpt-5.2-pro",
       browserModelLabel: "Instant",
     });
-    expect(config.desiredModel).toBe("GPT-5.4 Pro");
+    expect(config.desiredModel).toBe("Extended Pro");
   });
 
   test("falls back to canonical label when override matches base model", async () => {
@@ -115,6 +115,84 @@ describe("buildBrowserConfig", () => {
       remoteChrome: "remote-host:9333",
     });
     expect(config.remoteChrome).toEqual({ host: "remote-host", port: 9_333 });
+  });
+
+  test("enables attach-running with auto-connect by default", async () => {
+    const config = await buildBrowserConfig({
+      model: "gpt-5.2-pro",
+      browserAttachRunning: true,
+    });
+    expect(config.attachRunning).toBe(true);
+  });
+
+  test("still accepts browser-chrome-path when attach-running is enabled", async () => {
+    const config = await buildBrowserConfig({
+      model: "gpt-5.2-pro",
+      browserAttachRunning: true,
+      browserChromePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    });
+    expect(config.attachRunning).toBe(true);
+    expect(config.chromePath).toBe("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
+  });
+
+  test("rejects launcher-owned flags when attach-running is enabled", async () => {
+    await expect(
+      buildBrowserConfig({
+        model: "gpt-5.2-pro",
+        browserAttachRunning: true,
+        browserManualLogin: true,
+      }),
+    ).rejects.toThrow(/attach-running/i);
+  });
+
+  test("rejects browser-chrome-profile when attach-running is enabled", async () => {
+    await expect(
+      buildBrowserConfig({
+        model: "gpt-5.2-pro",
+        browserAttachRunning: true,
+        browserChromeProfile: "Profile 2",
+      }),
+    ).rejects.toThrow(/attach-running/i);
+  });
+
+  test("rejects browser-manual-login-profile-dir when attach-running is enabled", async () => {
+    await expect(
+      buildBrowserConfig({
+        model: "gpt-5.2-pro",
+        browserAttachRunning: true,
+        browserManualLoginProfileDir: "/tmp/oracle-profile",
+      }),
+    ).rejects.toThrow(/attach-running/i);
+  });
+
+  test("rejects inline cookie overrides when attach-running is enabled", async () => {
+    await expect(
+      buildBrowserConfig({
+        model: "gpt-5.2-pro",
+        browserAttachRunning: true,
+        browserInlineCookies: "[]",
+      }),
+    ).rejects.toThrow(/attach-running/i);
+  });
+
+  test("allows loopback remote-chrome as an attach-running hint", async () => {
+    const config = await buildBrowserConfig({
+      model: "gpt-5.2-pro",
+      browserAttachRunning: true,
+      remoteChrome: "127.0.0.1:9333",
+    });
+    expect(config.attachRunning).toBe(true);
+    expect(config.remoteChrome).toEqual({ host: "127.0.0.1", port: 9_333 });
+  });
+
+  test("rejects non-loopback remote-chrome targets when attach-running is enabled", async () => {
+    await expect(
+      buildBrowserConfig({
+        model: "gpt-5.2-pro",
+        browserAttachRunning: true,
+        remoteChrome: "remote-host:9333",
+      }),
+    ).rejects.toThrow(/local loopback attach hints/i);
   });
 
   test("normalizes chatgpt-url alias and adds https when missing", async () => {
@@ -200,11 +278,11 @@ describe("buildBrowserConfig", () => {
 
 describe("resolveBrowserModelLabel", () => {
   test("returns canonical ChatGPT label when CLI value matches API model", () => {
-    expect(resolveBrowserModelLabel("gpt-5.4-pro", "gpt-5.4-pro")).toBe("GPT-5.4 Pro");
+    expect(resolveBrowserModelLabel("gpt-5.4-pro", "gpt-5.4-pro")).toBe("Extended Pro");
     expect(resolveBrowserModelLabel("gpt-5.4", "gpt-5.4")).toBe("Thinking 5.4");
-    expect(resolveBrowserModelLabel("gpt-5-pro", "gpt-5-pro")).toBe("GPT-5.4 Pro");
-    expect(resolveBrowserModelLabel("gpt-5.2-pro", "gpt-5.2-pro")).toBe("GPT-5.4 Pro");
-    expect(resolveBrowserModelLabel("gpt-5.1-pro", "gpt-5.1-pro")).toBe("GPT-5.4 Pro");
+    expect(resolveBrowserModelLabel("gpt-5-pro", "gpt-5-pro")).toBe("Extended Pro");
+    expect(resolveBrowserModelLabel("gpt-5.2-pro", "gpt-5.2-pro")).toBe("Extended Pro");
+    expect(resolveBrowserModelLabel("gpt-5.1-pro", "gpt-5.1-pro")).toBe("Extended Pro");
     expect(resolveBrowserModelLabel("GPT-5.1", "gpt-5.1")).toBe("GPT-5.2");
   });
 
@@ -217,7 +295,7 @@ describe("resolveBrowserModelLabel", () => {
   });
 
   test("supports undefined or whitespace-only input", () => {
-    expect(resolveBrowserModelLabel(undefined, "gpt-5.2-pro")).toBe("GPT-5.4 Pro");
+    expect(resolveBrowserModelLabel(undefined, "gpt-5.2-pro")).toBe("Extended Pro");
     expect(resolveBrowserModelLabel("   ", "gpt-5.1")).toBe("GPT-5.2");
   });
 

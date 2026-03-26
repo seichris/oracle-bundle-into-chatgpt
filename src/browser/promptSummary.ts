@@ -3,17 +3,30 @@ import type { BrowserPromptArtifacts } from "./prompt.js";
 import { formatBytes } from "./utils.js";
 
 export function buildTokenEstimateSuffix(artifacts: BrowserPromptArtifacts): string {
+  const parts: string[] = [];
   if (artifacts.tokenEstimateIncludesInlineFiles && artifacts.inlineFileCount > 0) {
     const count = artifacts.inlineFileCount;
     const plural = count === 1 ? "" : "s";
-    return ` (includes ${count} inline file${plural})`;
+    parts.push(`includes ${count} inline file${plural}`);
   }
-  if (artifacts.attachments.length > 0) {
-    const count = artifacts.attachments.length;
-    const plural = count === 1 ? "" : "s";
-    return ` (prompt only; ${count} attachment${plural} excluded)`;
+  const excludedCount = artifacts.excludedAttachmentCount ?? 0;
+  if (excludedCount > 0) {
+    const plural = excludedCount === 1 ? "" : "s";
+    parts.push(`${excludedCount} uploaded attachment${plural} excluded from estimate`);
   }
-  return "";
+  return parts.length > 0 ? ` (${parts.join("; ")})` : "";
+}
+
+export function buildOpaqueAttachmentWarning(artifacts: BrowserPromptArtifacts): string | null {
+  const count = artifacts.excludedAttachmentCount ?? 0;
+  if (count <= 0) {
+    return null;
+  }
+  const plural = count === 1 ? "" : "s";
+  const sizeBytes = artifacts.excludedAttachmentBytes ?? 0;
+  const sizeLabel =
+    sizeBytes > 0 ? ` (${formatBytes(sizeBytes)} total)` : "";
+  return `Token estimate excludes ${count} uploaded archive/media attachment${plural}${sizeLabel}; Oracle cannot pre-budget those contents before browser upload.`;
 }
 
 export function formatAttachmentLabel(attachment: BrowserAttachment): string {
