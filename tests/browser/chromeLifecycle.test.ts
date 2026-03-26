@@ -250,4 +250,43 @@ describe("connectWithNewTab", () => {
       "Waiting for Chrome remote debugging approval for 127.0.0.1:9222...",
     );
   });
+
+  test("closes a websocket connection that resolves after the approval timeout", async () => {
+    vi.useFakeTimers();
+    const browserClient = {
+      close: vi.fn(async () => undefined),
+    };
+    let resolveConnect: (client: typeof browserClient) => void = () => {
+      throw new Error("Expected websocket resolver to be captured");
+    };
+    cdpMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveConnect = resolve as (client: typeof browserClient) => void;
+        }),
+    );
+
+    const { connectToRemoteChrome } = await import("../../src/browser/chromeLifecycle.js");
+    const logger = vi.fn();
+    const promise = connectToRemoteChrome(
+      "127.0.0.1",
+      9222,
+      logger,
+      "https://chatgpt.com/",
+      "ws://127.0.0.1:9222/devtools/browser/abc",
+      { approvalWaitMs: 20_000 },
+    );
+    const assertion = expect(promise).rejects.toThrow(
+      /waited 20s for Chrome remote debugging approval/i,
+    );
+
+    await vi.advanceTimersByTimeAsync(20_000);
+    await assertion;
+
+    resolveConnect(browserClient);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(browserClient.close).toHaveBeenCalledTimes(1);
+  });
 });

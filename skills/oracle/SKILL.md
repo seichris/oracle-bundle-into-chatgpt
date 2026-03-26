@@ -44,6 +44,7 @@ Recommended defaults:
   - `npx -y @steipete/oracle --engine browser --browser-attachments always -p "<task>" --file /tmp/repo-tracked.zip`
   - Notes:
     - `git archive HEAD` includes tracked files only, so untracked junk like `node_modules`, `.next`, `dist`, and local logs stay out automatically.
+    - Browser token estimates exclude uploaded archive contents, so keep the archive tight and use a repo-specific archive script if you need extra pruning.
     - If you need extra excludes beyond tracked-file filtering, use git pathspecs or a repo-specific archive script; avoid brittle `grep` pipelines.
 
 - Manual paste fallback (assemble bundle, copy to clipboard):

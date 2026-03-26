@@ -17,6 +17,7 @@ describe("resolveAttachRunningConnection", () => {
           mtimeMs: 10,
         },
       ]),
+      isLoopbackDevToolsHost: vi.fn(() => true),
     }));
 
     const { resolveAttachRunningConnection } = await import("../../src/browser/attachRunning.js");
@@ -59,6 +60,7 @@ describe("resolveAttachRunningConnection", () => {
           mtimeMs: 20,
         },
       ]),
+      isLoopbackDevToolsHost: vi.fn(() => true),
     }));
 
     const { resolveAttachRunningConnection } = await import("../../src/browser/attachRunning.js");
@@ -89,6 +91,7 @@ describe("resolveAttachRunningConnection", () => {
   test("rejects attach-running when no local DevToolsActivePort matches the selected port", async () => {
     vi.doMock("../../src/browser/detect.js", () => ({
       discoverDevToolsActivePortCandidates: vi.fn(async () => []),
+      isLoopbackDevToolsHost: vi.fn(() => true),
     }));
 
     const { resolveAttachRunningConnection } = await import("../../src/browser/attachRunning.js");
@@ -112,6 +115,7 @@ describe("resolveAttachRunningConnection", () => {
     }));
 
     const { resolveAttachRunningConnection } = await import("../../src/browser/attachRunning.js");
+    const logger = vi.fn((_: string) => undefined) as BrowserLogger;
 
     await expect(
       resolveAttachRunningConnection(
@@ -119,7 +123,7 @@ describe("resolveAttachRunningConnection", () => {
           chromePath: null,
           remoteChrome: { host: "192.168.1.10", port: 9222 },
         },
-        vi.fn(),
+        logger,
       ),
     ).rejects.toThrow(/only supports local loopback attach hints/i);
   });

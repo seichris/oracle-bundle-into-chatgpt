@@ -222,6 +222,13 @@ describe("assembleBrowserPrompt", () => {
     await fs.writeFile(zipPath, "fake zip payload");
 
     try {
+      const promptOnly = await assembleBrowserPrompt(
+        buildOptions({ file: [], browserAttachments: "always" }),
+        {
+          cwd: "/repo",
+          readFilesImpl: async () => [],
+        },
+      );
       const result = await assembleBrowserPrompt(
         buildOptions({
           file: [zipPath],
@@ -245,6 +252,9 @@ describe("assembleBrowserPrompt", () => {
       ]);
       expect(result.composerText).toBe("Explain the bug");
       expect(result.inlineFileCount).toBe(0);
+      expect(result.estimatedInputTokens).toBe(promptOnly.estimatedInputTokens);
+      expect(result.excludedAttachmentCount).toBe(1);
+      expect(result.excludedAttachmentBytes).toBe(Buffer.byteLength("fake zip payload"));
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
     }

@@ -6,6 +6,7 @@ import type { BrowserSessionConfig, BrowserRuntimeMetadata } from "../sessionSto
 import { runBrowserMode } from "../browserMode.js";
 import type { BrowserRunResult } from "../browserMode.js";
 import { assembleBrowserPrompt } from "./prompt.js";
+import { buildOpaqueAttachmentWarning, buildTokenEstimateSuffix } from "./promptSummary.js";
 import { BrowserAutomationError } from "../oracle/errors.js";
 import type { BrowserLogger } from "./types.js";
 
@@ -77,7 +78,9 @@ export async function runBrowserSessionExecution(
       ),
     );
   }
-  const headerLine = `Launching browser mode (${runOptions.model}) with ~${promptArtifacts.estimatedInputTokens.toLocaleString()} tokens.`;
+  const headerSuffix = buildTokenEstimateSuffix(promptArtifacts);
+  const headerLine = `Launching browser mode (${runOptions.model}) with ~${promptArtifacts.estimatedInputTokens.toLocaleString()} tokens${headerSuffix}.`;
+  const opaqueAttachmentWarning = buildOpaqueAttachmentWarning(promptArtifacts);
   const automationLogger: BrowserLogger = ((message?: string) => {
     if (typeof message !== "string") return;
     const shouldAlwaysPrint = message.startsWith("[browser] ") && /fallback|retry/i.test(message);
@@ -88,6 +91,9 @@ export async function runBrowserSessionExecution(
   automationLogger.sessionLog = runOptions.verbose ? log : () => {};
 
   log(headerLine);
+  if (opaqueAttachmentWarning) {
+    log(chalk.dim(opaqueAttachmentWarning));
+  }
   log(chalk.dim("This run can take up to an hour (usually ~10 minutes)."));
   if (runOptions.verbose) {
     log(chalk.dim("Chrome automation does not stream output; this may take a minute..."));

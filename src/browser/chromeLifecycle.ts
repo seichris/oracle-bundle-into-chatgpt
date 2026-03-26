@@ -342,7 +342,21 @@ async function connectToBrowserWebSocket(
   logger: BrowserLogger,
   approvalWaitMs?: number,
 ): Promise<ChromeClient> {
-  const connectPromise = CDP({ target: browserWSEndpoint, local: true }) as Promise<ChromeClient>;
+  let timedOut = false;
+  let timeoutError: Error | null = null;
+  const connectPromise = (CDP({
+    target: browserWSEndpoint,
+    local: true,
+  }) as Promise<ChromeClient>).then(async (client) => {
+    if (!timedOut) {
+      return client;
+    }
+    await client.close().catch(() => undefined);
+    if (logger.verbose) {
+      logger(`Closed late Chrome DevTools connection after approval timeout for ${host}:${port}`);
+    }
+    throw timeoutError ?? new Error("Chrome remote debugging approval timed out.");
+  });
   if (!approvalWaitMs || approvalWaitMs <= 0) {
     return await connectPromise;
   }
@@ -355,11 +369,11 @@ async function connectToBrowserWebSocket(
       connectPromise,
       new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
-          reject(
-            new Error(
-              `Oracle waited ${formatApprovalWait(approvalWaitMs)} for Chrome remote debugging approval at ${host}:${port}. Allow the Chrome prompt or retry after toggling remote debugging.`,
-            ),
+          timedOut = true;
+          timeoutError = new Error(
+            `Oracle waited ${formatApprovalWait(approvalWaitMs)} for Chrome remote debugging approval at ${host}:${port}. Allow the Chrome prompt or retry after toggling remote debugging.`,
           );
+          reject(timeoutError);
         }, approvalWaitMs);
       }),
     ]);

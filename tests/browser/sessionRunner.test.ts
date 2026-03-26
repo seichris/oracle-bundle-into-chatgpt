@@ -296,6 +296,50 @@ describe("runBrowserSessionExecution", () => {
     );
   });
 
+  test("marks archive uploads as excluded from the token estimate", async () => {
+    const log = vi.fn();
+    await runBrowserSessionExecution(
+      {
+        runOptions: { ...baseRunOptions, file: ["/tmp/repo-tracked.zip"] },
+        browserConfig: baseConfig,
+        cwd: "/repo",
+        log,
+      },
+      {
+        assemblePrompt: async () => ({
+          markdown: "prompt",
+          composerText: "prompt",
+          estimatedInputTokens: 25,
+          attachments: [
+            { path: "/tmp/repo-tracked.zip", displayPath: "/tmp/repo-tracked.zip", sizeBytes: 2048 },
+          ],
+          inlineFileCount: 0,
+          tokenEstimateIncludesInlineFiles: false,
+          excludedAttachmentCount: 1,
+          excludedAttachmentBytes: 2048,
+          attachmentsPolicy: "always",
+          attachmentMode: "upload",
+          fallback: null,
+        }),
+        executeBrowser: async () => ({
+          answerText: "text",
+          answerMarkdown: "markdown",
+          tookMs: 10,
+          answerTokens: 1,
+          answerChars: 5,
+        }),
+      },
+    );
+
+    const joined = log.mock.calls.flat().join("\n");
+    expect(joined).toContain(
+      "Launching browser mode (gpt-5.2-pro) with ~25 tokens (1 uploaded attachment excluded from estimate).",
+    );
+    expect(joined).toContain(
+      "Token estimate excludes 1 uploaded archive/media attachment (2.0 KB total); Oracle cannot pre-budget those contents before browser upload.",
+    );
+  });
+
   test("verbose output spells out token labels", async () => {
     const log = vi.fn();
     await runBrowserSessionExecution(
